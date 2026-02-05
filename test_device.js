@@ -1,60 +1,61 @@
-// test_device.js
+// test_device.js (Final JSON-Fixed Version)
 const mqtt = require('mqtt');
 
-// Koneksi ke broker lokal kita
+// Connect to Broker (1883)
 const client = mqtt.connect('mqtt://localhost:1883');
-
-// Data Dummy (Sesuai dengan skema machine_logs yang kompleks tadi)
-const dummyPayload = {
-    // Linear Actuators
-    la1Forward: false,
-    la1Backward: false,
-    la2Forward: false,
-    la2Backward: false,
-
-    // Stepper Relays
-    stepper1Relay: false,
-    stepper2Relay: false,
-
-    // Sensors & Proximity
-    irRelay: true,
-    inductiveRelay: false,
-    capacitiveRelay: false,
-    irSensor: true,
-    inductiveSensor: true,
-    capacitiveSensor: true,
-
-    // Values
-    stepper1Rpm: 20.0,
-    stepper1Position: 0.0,
-    stepper2Rpm: 0.0,
-    stepper2Position: 0.0,
-
-    // Status
-    isPowerLive: true,
-    
-    // Outer Points (Harus string: empty/occupied/occupied_metallic)
-    outerPoint1: "occupied",
-    outerPoint2: "occupied",
-    outerPoint3: "empty",
-    outerPoint4: "empty",
-    outerPoint5: "empty",
-
-    // Inner Points
-    innerPoint1Occupied: true,
-    innerPoint2Occupied: true,
-    innerPoint3Occupied: false,
-    innerPoint4Occupied: false,
-    innerPoint5Occupied: false
-};
+const PREFIX = 'ITB/IIOT';
 
 client.on('connect', () => {
-    console.log('🔌 Simulasi Device Terkoneksi!');
+    console.log('✅ HMI COMPATIBLE SIMULATOR CONNECTED!');
+    console.log('🚀 Sending CORRECT JSON formats...');
 
-    // Kirim data ke topik conveyor
-    // Pastikan handler conveyor.js kamu sudah pakai versi REVISI (Mapping)
-    client.publish('conveyor/data', JSON.stringify(dummyPayload), () => {
-        console.log('📤 Data dikirim!');
-        client.end(); // Tutup koneksi setelah kirim
-    });
+    setInterval(() => {
+        // --- 1. SYSTEM STATUS ---
+        // Expects: { "mode": "automatic" }
+        publish(`${PREFIX}/conveyor/system/mode`, { mode: "automatic" });
+        
+        // Expects: { "status": "live" }
+        publish(`${PREFIX}/conveyor/power/electricity/status`, { status: "live" });
+
+        // Expects: { "status": 1 }
+        publish(`${PREFIX}/conveyor/mqtt_status`, { status: 1 });
+
+        // --- 2. SENSORS (WRAP IN STATE) ---
+        // Expects: { "state": true }
+        publish(`${PREFIX}/conveyor/sensor/ir/state`, { state: false });
+        publish(`${PREFIX}/conveyor/sensor/inductive/state`, { state: false });
+        publish(`${PREFIX}/conveyor/sensor/capacitive/state`, { state: false });
+        publish(`${PREFIX}/conveyor/sensor/position_inner/state`, { state: false });
+        publish(`${PREFIX}/conveyor/sensor/position_outer/state`, { state: false });
+
+        // --- 3. DYNAMIC DATA (WRAP IN STATE) ---
+        const innerCount = Math.floor(Date.now() / 1000) % 100;
+        const speed = 0; 
+        
+        publish(`${PREFIX}/conveyor/sensor/object_inner/state`, { state: innerCount });
+        publish(`${PREFIX}/conveyor/sensor/object_outer/state`, { state: innerCount + 5 });
+        publish(`${PREFIX}/conveyor/sensor/motor_speed/state`, { state: speed });
+
+        // --- 4. ACTUATORS (WRAP IN STATE) ---
+        publish(`${PREFIX}/conveyor/feedback/actuator/DL/push`, { state: false });
+        publish(`${PREFIX}/conveyor/feedback/actuator/DL/pull`, { state: false });
+        publish(`${PREFIX}/conveyor/feedback/actuator/LD/push`, { state: false });
+        publish(`${PREFIX}/conveyor/feedback/actuator/LD/pull`, { state: false });
+
+        // --- 5. CONVEYOR RUNNING STATE ---
+        // This is likely why it said "Idle" -> It thought conveyors were stopped!
+        publish(`${PREFIX}/conveyor/actuator/stepper/inner`, { state: true });
+        publish(`${PREFIX}/conveyor/actuator/stepper/outer`, { state: true });
+        
+        // New Feedback Topics
+        publish(`${PREFIX}/conveyor/feedback/actuator/stepper/inner`, { state: false });
+        publish(`${PREFIX}/conveyor/feedback/actuator/stepper/outer`, { state: true });
+
+        process.stdout.write("🟢"); 
+    }, 1000);
 });
+
+function publish(topic, payload) {
+    // CRITICAL: We now stringify EVERY payload into JSON
+    client.publish(topic, JSON.stringify(payload));
+}

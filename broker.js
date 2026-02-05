@@ -46,8 +46,8 @@ function parseBool(val) {
 }
 
 // --- 1. CONFIGURATION ---
-const LOCAL_TCP_PORT = 1885;
-const LOCAL_WS_PORT = 1886;
+const LOCAL_TCP_PORT = 1883;
+const LOCAL_WS_PORT = 8888;
 const REMOTE_HOST = 'mqtt://iot.tf.itb.ac.id';
 const REMOTE_TOPIC_SUB = 'ITB/IIOT/conveyor/#'; 
 const REMOTE_TOPIC_PUB_PREFIX = 'ITB/IIOT';
