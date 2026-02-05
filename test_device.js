@@ -30,7 +30,7 @@ client.on('connect', () => {
 
         // --- 3. DYNAMIC DATA (WRAP IN STATE) ---
         const innerCount = Math.floor(Date.now() / 1000) % 100;
-        const speed = 0; 
+        const speed = 2500; 
         
         publish(`${PREFIX}/conveyor/sensor/object_inner/state`, { state: innerCount });
         publish(`${PREFIX}/conveyor/sensor/object_outer/state`, { state: innerCount + 5 });
